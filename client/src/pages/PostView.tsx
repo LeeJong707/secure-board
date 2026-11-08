@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import DOMPurify from "dompurify";
 import { api, downloadUrl } from "../api";
 import { formatDate, formatSize } from "../format";
 import type { Comment, PostDetail, User } from "../types";
@@ -44,6 +45,10 @@ export default function PostView({id, me, go}: {id: number; me: User | null; go:
   if (!post) return <section className="card"><p className="muted">불러오는 중…</p></section>;
 
   const canEdit = me !== null && (me.id === post.user_id || me.role === "ADMIN");
+  const safeContent = DOMPurify.sanitize(post.content, {
+    ALLOWED_TAGS: ["b", "i", "u", "br"],
+    ALLOWED_ATTR: [],
+  });
 
   return (
     <article className="card">
@@ -51,7 +56,7 @@ export default function PostView({id, me, go}: {id: number; me: User | null; go:
       <h1>{post.title}</h1>
       <p className="meta">{post.authorName} · {formatDate(post.created_at)}</p>
 
-      <div className="content" dangerouslySetInnerHTML={{__html: post.content}} />
+      <div className="content" dangerouslySetInnerHTML={{__html: safeContent}} />
 
       {post.attachments.length > 0 && (
         <div className="files">
