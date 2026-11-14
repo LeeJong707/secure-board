@@ -4,6 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { pool } from "../db/pool.js";
 import { positiveId } from "../validation.js";
+import { requireLogin } from "../requireLogin.js";
 
 export const fileRouter = Router();
 
@@ -24,7 +25,7 @@ const upload = multer({
   })
 });
 
-fileRouter.post("/upload", upload.single("file"), async (req, res) => {
+fileRouter.post("/upload", requireLogin, upload.single("file"), async (req, res) => {
   const user = req.session.user as any;
   const file = req.file;
   if (!file) return res.status(400).json({ message: "no file" });

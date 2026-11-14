@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool } from "../db/pool.js";
 import { positiveId } from "../validation.js";
+import { requireLogin } from "../requireLogin.js";
 
 export const commentRouter = Router({ mergeParams: true });
 
@@ -21,7 +22,7 @@ commentRouter.get("/", async (req, res) => {
   res.json(rows);
 });
 
-commentRouter.post("/", async (req, res) => {
+commentRouter.post("/", requireLogin, async (req, res) => {
   const params = req.params as Record<string, string>;
   const postId = positiveId(params.postId);
   if (postId === null) {
@@ -44,7 +45,7 @@ commentRouter.post("/", async (req, res) => {
   res.json({ message: "created" });
 });
 
-commentRouter.delete("/:commentId", async (req, res) => {
+commentRouter.delete("/:commentId", requireLogin, async (req, res) => {
   const params = req.params as Record<string, string>;
   const postId = positiveId(params.postId);
   const commentId = positiveId(params.commentId);

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool } from "../db/pool.js";
 import { positiveId } from "../validation.js";
+import { requireLogin } from "../requireLogin.js";
 
 export const postRouter = Router();
 
@@ -47,7 +48,7 @@ postRouter.get("/:id", async (req, res) => {
   res.json({ ...rows[0], attachments });
 });
 
-postRouter.post("/", async (req, res) => {
+postRouter.post("/", requireLogin, async (req, res) => {
   const user = req.session.user as any;
   const { title, content, userId } = req.body ?? {};
 
@@ -70,7 +71,7 @@ postRouter.post("/", async (req, res) => {
   res.json({ message: "created", id: result.insertId });
 });
 
-postRouter.put("/:id", async (req, res) => {
+postRouter.put("/:id", requireLogin, async (req, res) => {
   const id = positiveId(req.params.id);
   if (id === null) {
     return res.status(400).json({ message: "id must be a positive integer" });
@@ -91,7 +92,7 @@ postRouter.put("/:id", async (req, res) => {
   res.json({ message: "updated" });
 });
 
-postRouter.delete("/:id", async (req, res) => {
+postRouter.delete("/:id", requireLogin, async (req, res) => {
   const id = positiveId(req.params.id);
   if (id === null) {
     return res.status(400).json({ message: "id must be a positive integer" });
