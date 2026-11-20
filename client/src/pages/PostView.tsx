@@ -94,7 +94,7 @@ export default function PostView({id, me, go}: {id: number; me: User | null; go:
               <div className="comment-head">
                 <b>{c.authorName}</b>
                 <span className="muted">{formatDate(c.created_at)}</span>
-                {me?.id === c.user_id && (
+                {me && (me.id === c.user_id || me.role === "ADMIN") && (
                   <button className="link danger-text" onClick={() => removeComment(c.id)}>삭제</button>
                 )}
               </div>

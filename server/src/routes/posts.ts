@@ -49,8 +49,8 @@ postRouter.get("/:id", async (req, res) => {
 });
 
 postRouter.post("/", requireLogin, async (req, res) => {
-  const user = req.session.user as any;
-  const { title, content, userId } = req.body ?? {};
+  const actor = req.session.user!;
+const { title, content } = req.body ?? {};
 
   if (typeof title !== "string" || typeof content !== "string") {
     return res.status(400).json({ message: "title and content must be strings" });
@@ -59,14 +59,10 @@ postRouter.post("/", requireLogin, async (req, res) => {
     return res.status(400).json({ message: "title must be 1-100 characters and content 1-5000" });
   }
 
-  const authorId = positiveId(userId ?? user?.id ?? 1);
-  if (authorId === null) {
-    return res.status(400).json({ message: "userId must be a positive integer" });
-  }
 
   const [result]: any = await pool.execute(
     "INSERT INTO posts(user_id, title, content) VALUES (?, ?, ?)",
-    [authorId, title, content]
+    [actor.id, title, content]
   );
   res.json({ message: "created", id: result.insertId });
 });
@@ -85,6 +81,20 @@ postRouter.put("/:id", requireLogin, async (req, res) => {
     return res.status(400).json({ message: "title must be 1-100 characters and content 1-5000" });
   }
 
+    const actor = req.session.user!;
+  const [rows]: any = await pool.execute(
+    "SELECT user_id FROM posts WHERE id = ?",
+    [id]
+  );
+
+  if (!rows.length) {
+    return res.status(404).json({ message: "not found" });
+  }
+
+  if (rows[0].user_id !== actor.id && actor.role !== "ADMIN") {
+    return res.status(403).json({ message: "forbidden" });
+  }
+
   await pool.execute(
     "UPDATE posts SET title = ?, content = ? WHERE id = ?",
     [title, content, id]
@@ -96,6 +106,20 @@ postRouter.delete("/:id", requireLogin, async (req, res) => {
   const id = positiveId(req.params.id);
   if (id === null) {
     return res.status(400).json({ message: "id must be a positive integer" });
+  }
+
+  const actor = req.session.user!;
+  const [rows]: any = await pool.execute(
+    "SELECT user_id FROM posts WHERE id = ?",
+    [id]
+  );
+
+  if (!rows.length) {
+    return res.status(404).json({ message: "not found" });
+  }
+
+  if (rows[0].user_id !== actor.id && actor.role !== "ADMIN") {
+    return res.status(403).json({ message: "forbidden" });
   }
 
   await pool.execute("DELETE FROM posts WHERE id = ?", [id]);

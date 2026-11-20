@@ -53,6 +53,23 @@ commentRouter.delete("/:commentId", requireLogin, async (req, res) => {
     return res.status(400).json({ message: "postId and commentId must be positive integers" });
   }
 
-  await pool.execute("DELETE FROM comments WHERE id = ?", [commentId]);
+  const actor = req.session.user!;
+const [rows]: any = await pool.execute(
+  "SELECT user_id FROM comments WHERE id = ? AND post_id = ?",
+  [commentId, postId]
+);
+
+if (!rows.length) {
+  return res.status(404).json({ message: "not found" });
+}
+
+if (rows[0].user_id !== actor.id && actor.role !== "ADMIN") {
+  return res.status(403).json({ message: "forbidden" });
+}
+
+await pool.execute(
+  "DELETE FROM comments WHERE id = ? AND post_id = ?",
+  [commentId, postId]
+);
   res.json({ message: "deleted" });
 });
